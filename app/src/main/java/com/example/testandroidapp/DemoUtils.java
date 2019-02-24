@@ -50,7 +50,7 @@ public class DemoUtils {
      * will be appended to the toast. The error will also be written to the Log
      */
     public static void displayError(
-            final Context context, final String errorMsg, @Nullable final Throwable problem) {
+        final Context context, final String errorMsg, @Nullable final Throwable problem) {
         final String tag = context.getClass().getSimpleName();
         final String toastText;
         if (problem != null && problem.getMessage() != null) {
