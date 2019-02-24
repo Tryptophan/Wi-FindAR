@@ -1,10 +1,5 @@
 package com.example.testandroidapp;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.internal.BottomNavigationItemView;
 import android.support.v4.app.Fragment;
@@ -13,18 +8,28 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.android.gms.maps.model.LatLng;
 
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback {
 
     private SupportMapFragment mapFragment;
+
+    private FirebaseFirestore db;
+    private GoogleMap map;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Init firebase app
         FirebaseApp.initializeApp(this);
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        // TODO: Initialize firebase app
+        this.db = FirebaseFirestore.getInstance();
 
         // Add map fragment
         this.mapFragment = new SupportMapFragment();
@@ -50,28 +54,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.container, this.mapFragment);
         fragmentTransaction.commit();
-
-        final BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent intent) {
-                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    List<ScanResult> scanResults = wifiManager.getScanResults();
-                    // add your logic here
-                    signals.clear();
-                    String dataString = "";
-                    for (ScanResult result : scanResults) {
-                        // SSID = AP SSID, BSSID = MAC Address, level = signal strength
-                        String signal = result.SSID + ", " + result.BSSID + ": " + result.level + result.capabilities + wifiManager.calculateSignalLevel(result.level, 5)  + "\n";
-                        RouterInfo routerInfo = new RouterInfo(result.SSID, result.BSSID, result.capabilities, result.level, WifiManager.calculateSignalLevel(result.level, 5));
-                        signals.add(signal);
-                        if (signal.toLowerCase().contains(filterString.toLowerCase())) {
-                            dataString += signal;
-                        }
-                    }
-                    dataField.setText(dataString);
-                }
-            }
-        };
 
         // Navigation button listeners
         BottomNavigationItemView mapButton = findViewById(R.id.navigation_map);
@@ -86,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Fragment fragment = null;
         switch (view.getId()) {
             case R.id.navigation_map:
-                fragment =this.mapFragment;
+                fragment = this.mapFragment;
                 break;
             // TODO: AR fragment case
         }
@@ -101,21 +83,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         transaction.commit();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-
     public void onMapReady(GoogleMap googleMap) {
+        this.map = googleMap;
 
+        // Get router locations from firebase and add pins to map
+        CollectionReference routers = db.collection("routers");
+        routers.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot snap) {
+                for (QueryDocumentSnapshot router : snap) {
+                    GeoPoint location = (GeoPoint) router.get("location");
+                    LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
+                    map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(marker, 15));
+                }
+            }
+        });
     }
 
 }
