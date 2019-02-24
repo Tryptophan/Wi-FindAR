@@ -1,5 +1,6 @@
 package com.example.testandroidapp;
 
+import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,8 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -23,39 +26,37 @@ import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
 
-    private ArrayList<String> signals = new ArrayList<>();
     private String filterString = "";
+    private List<ScanResult> scanResults;
+    String textViewText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Bundle textBundle=getIntent().getExtras();
+        if (textBundle != null) {
+            textViewText = textBundle.get("TextView").toString();
+        }
         Toolbar toolbar = findViewById(R.id.toolbar);
         final TextView dataField = findViewById(R.id.datafield);
         final EditText filter = findViewById(R.id.filter);
         setSupportActionBar(toolbar);
-
-        Context context = getApplicationContext();
+        final Context context = getApplicationContext();
         final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
         final BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context c, Intent intent) {
                 if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    List<ScanResult> scanResults = wifiManager.getScanResults();
-                    // add your logic here
-                    signals.clear();
-                    String dataString = "";
-                    for (ScanResult result : scanResults) {
-                        String signal = result.SSID + ", " + result.BSSID + ": " + result.level + "\n";
-                        signals.add(signal);
-                        if (signal.toLowerCase().contains(filterString.toLowerCase())) {
-                            dataString += signal;
-                        }
-                    }
-                    dataField.setText(dataString);
+                    scanResults = wifiManager.getScanResults();
+                    FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    Fragment f = new WifiList();
+                    fragmentTransaction.add(android.R.id.content, f);
+                    fragmentTransaction.commitAllowingStateLoss();
                 }
             }
         };
@@ -87,6 +88,19 @@ public class MainActivity extends AppCompatActivity {
                 filterString = s.toString();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {  // used onResume because until this call activity is created completely
+        super.onResume();
+
+
+        TextView textViewWidget=(TextView) findViewById(R.id.textView);
+        textViewWidget.setText(textViewText);
+    }
+
+    public List<ScanResult> getList(){
+        return scanResults;
     }
 
     @Override

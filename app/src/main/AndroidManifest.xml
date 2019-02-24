@@ -5,12 +5,13 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COURSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- Both "AR Optional" and "AR Required" apps require CAMERA permission. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- Both "AR Optional" and "AR Required" apps require CAMERA permission. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- Indicates that app requires ARCore ("AR Required"). Ensures app is only
+    <!--
+ Indicates that app requires ARCore ("AR Required"). Ensures app is only
          visible in the Google Play Store on devices that support ARCore.
-         For "AR Optional" apps remove this line. -->
+         For "AR Optional" apps remove this line.
+    -->
     <uses-feature android:name="android.hardware.camera.ar" />
 
     <application
@@ -31,7 +32,9 @@
             </intent-filter>
         </activity>
 
-        <meta-data android:name="com.google.ar.core" android:value="optional" />
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="optional" />
     </application>
 
 </manifest>
