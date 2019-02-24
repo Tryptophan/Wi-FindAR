@@ -3,7 +3,6 @@ package com.example.testandroidapp;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Location;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
@@ -126,7 +125,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             for (QueryDocumentSnapshot router : snap) {
 
                 // Mark location of router
-                GeoPoint location = (GeoPoint) router.get("location");
+                GeoPoint location = (GeoPoint)router.get("location");
+
                 LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
                 map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
 
