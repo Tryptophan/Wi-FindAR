@@ -16,5 +16,5 @@
 
     <!-- Strings used by UI components -->
     <string name="clear_button_string">Clear</string>
-    <string name="hello_ar_activity">Wi-FindAR</string>
+    <string name="hello_ar_activity">hello_ar_activity</string>
 </resources>
