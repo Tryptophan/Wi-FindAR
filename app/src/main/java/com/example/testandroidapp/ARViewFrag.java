@@ -10,10 +10,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
+import com.google.firebase.firestore.GeoPoint;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -34,6 +36,7 @@ public class ARViewFrag extends ArFragment {
     //use from location scene
     private LocationScene locationScene;
     private ModelRenderable andyRenderable; //from the ARCore location example.
+    private ArSceneView arSceneView;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -76,6 +79,9 @@ public class ARViewFrag extends ArFragment {
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
 
+        arSceneView = findViewById(R.id.ar_frag);
+
+        locationScene = new LocationScene(this, this, arSceneView);
 
         // Build a renderable from a 2D View.
         CompletableFuture<ViewRenderable> exampleLayout =
@@ -166,5 +172,10 @@ public class ARViewFrag extends ArFragment {
                     .show();
         });
         return base;
+    }
+
+    public void pinLocation(GeoPoint coordinates){
+
+
     }
 }

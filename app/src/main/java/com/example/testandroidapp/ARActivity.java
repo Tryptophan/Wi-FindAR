@@ -25,14 +25,25 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
 import com.google.ar.sceneform.AnchorNode;
+import com.google.ar.sceneform.ArSceneView;
+import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
+import com.google.firebase.firestore.GeoPoint;
+
+import uk.co.appoly.arcorelocation.LocationMarker;
+import uk.co.appoly.arcorelocation.LocationScene;
+import uk.co.appoly.arcorelocation.rendering.LocationNode;
+import uk.co.appoly.arcorelocation.rendering.LocationNodeRender;
 
 /**
  * This is an example activity that uses the Sceneform UX package to make common AR tasks easier.
@@ -43,6 +54,12 @@ public class ARActivity extends AppCompatActivity {
 
     private ArFragment arFragment;
     private ModelRenderable andyRenderable;
+
+    //use from location scene
+    private LocationScene locationScene;
+    private ArSceneView arSceneView;
+
+    private ViewRenderable arRenderableView;
 
     @Override
     @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
@@ -57,6 +74,10 @@ public class ARActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_ux);
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
+
+        arSceneView = findViewById(R.id.ux_fragment);
+
+        locationScene = new LocationScene(this, this, arSceneView);
 
         // When you build a Renderable, Sceneform loads its resources in the background while returning
         // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
@@ -74,6 +95,14 @@ public class ARActivity extends AppCompatActivity {
                         });
 
         arFragment.setOnTapArPlaneListener(
+
+                if(andyRenderable == null){
+                    return;
+                }
+
+                GeoPoint = new GeoPoint()
+                dropPin();
+                /*
                 (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
                     if (andyRenderable == null) {
                         return;
@@ -89,7 +118,7 @@ public class ARActivity extends AppCompatActivity {
                     andy.setParent(anchorNode);
                     andy.setRenderable(andyRenderable);
                     andy.select();
-                });
+                });*/
     }
 
     /**
@@ -119,5 +148,63 @@ public class ARActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+
+    public void dropPin(GeoPoint coordinates){
+
+        LocationMarker layoutLocationMarker = new LocationMarker(
+                coordinates.getLongitude(),
+                coordinates.getLatitude(),
+                getActiveView()
+        );
+
+        // An example "onRender" event, called every frame
+        // Updates the layout with the markers distance
+        layoutLocationMarker.setRenderEvent(new LocationNodeRender() {
+            @Override
+            public void render(LocationNode node) {
+                View eView = arRenderableView.getView();
+                TextView distanceTextView = eView.findViewById(R.id.textView2);
+                distanceTextView.setText(node.getDistance() + "M");
+            }
+        });
+        // Adding the marker
+        locationScene.mLocationMarkers.add(layoutLocationMarker);
+
+        // Adding a simple location marker of a 3D model
+        locationScene.mLocationMarkers.add(
+                new LocationMarker(
+                        -0.119677,
+                        51.478494,
+                        getAndy()));
+    }
+
+    private Node getActiveView() {
+        Node base = new Node();
+        base.setRenderable(arRenderableView);
+        Context c = this;
+        // Add  listeners etc here
+        View eView = arRenderableView.getView();
+        eView.setOnTouchListener((v, event) -> {
+            Toast.makeText(
+                    c, "Location marker touched.", Toast.LENGTH_LONG)
+                    .show();
+            return false;
+        });
+
+        return base;
+    }
+
+    private Node getAndy() {
+        Node base = new Node();
+        base.setRenderable(andyRenderable);
+        Context c = this;
+
+        base.setOnTapListener((v, event) -> {
+            Toast.makeText(
+                    c, "Andy touched.", Toast.LENGTH_LONG)
+                    .show();
+        });
+        return base;
     }
 }
