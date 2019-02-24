@@ -1,6 +1,7 @@
 package com.example.testandroidapp;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -97,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
+        /*
         Fragment fragment = null;
         switch (view.getId()) {
             case R.id.navigation_map:
@@ -107,7 +109,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
 
-        replaceFragment(fragment);
+        replaceFragment(fragment);*/
+        Intent intent = new Intent(MainActivity.this, ARActivity.class);
+        startActivity(intent);
     }
 
     public void replaceFragment(Fragment fragment) {
@@ -127,6 +131,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // Mark location of router
                 GeoPoint location = (GeoPoint) router.get("location");
+                if(location == null) {
+                    return;
+                }
                 LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
                 map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
 
