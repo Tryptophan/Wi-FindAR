@@ -35,6 +35,9 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
+    // Heatmaps dependency
+    implementation 'com.google.maps.android:android-maps-utils:0.5'
+
     // Provides ARCore Session and related resources.
     implementation 'com.google.ar:core:1.7.0'
     // Provides ArFragment, and other UX resources.
