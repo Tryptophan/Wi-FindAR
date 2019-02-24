@@ -1,6 +1,5 @@
 package com.example.testandroidapp;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.design.internal.BottomNavigationItemView;
 import android.support.v4.app.Fragment;
@@ -8,14 +7,16 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.example.testandroidapp.ui.map.MapFragment;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback {
 
-    private static Context context;
+    private SupportMapFragment mapFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,10 +25,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // TODO: Initialize firebase app
 
-        // Add the map fragment
+        // Add map fragment
+        this.mapFragment = new SupportMapFragment();
+        this.mapFragment.getMapAsync(this);
+
+        // Render map fragment
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        Fragment fragment = new MapFragment();
-        fragmentTransaction.add(R.id.container, fragment);
+        fragmentTransaction.add(R.id.container, this.mapFragment);
         fragmentTransaction.commit();
 
         // Navigation button listeners
@@ -43,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Fragment fragment = null;
         switch (view.getId()) {
             case R.id.navigation_map:
-                fragment = new MapFragment();
+                fragment =this.mapFragment;
                 break;
             // TODO: AR fragment case
         }
@@ -56,5 +60,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         transaction.replace(R.id.container, fragment);
         transaction.addToBackStack(null);
         transaction.commit();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
     }
 }
