@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private TileOverlay overlay;
 
-    private FirebaseFirestore db;
+    public static FirebaseFirestore db;
     private GoogleMap map;
 
     private FusedLocationProviderClient fusedLocationClient;
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private LocationListener locationListener;
     private LocationManager locationManager;
-    private Location location;
+    public static Location location;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -272,6 +272,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Get reference to heapmap of router
         CollectionReference locations = db.collection("locations");
+        CollectionReference pins = db.collection("pins");
+
         locations.get().addOnSuccessListener(snap -> {
             // ArrayList to store heat map points
             ArrayList<WeightedLatLng> weightedHeatMap = new ArrayList<>();
@@ -305,6 +307,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 weightedHeatMap.add(weightedLatLng);
             }
             overlayHeatmap(weightedHeatMap);
+        });
+
+        pins.get().addOnSuccessListener(snap -> {
+
+            for (DocumentSnapshot pin : snap.getDocuments()) {
+                GeoPoint geoPoint = (GeoPoint) pin.get("location");
+                LatLng latLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+
+                map.addMarker(new MarkerOptions().position(latLng).title("CometNet"));
+            }
+        });
+        pins.addSnapshotListener((snap, e) -> {
+            for (DocumentSnapshot pin : snap.getDocuments()) {
+                GeoPoint geoPoint = (GeoPoint) pin.get("location");
+                LatLng latLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+
+                map.addMarker(new MarkerOptions().position(latLng).title("CometNet"));
+            }
         });
     }
 

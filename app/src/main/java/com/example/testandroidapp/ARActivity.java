@@ -18,6 +18,7 @@ package com.example.testandroidapp;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.location.Location;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
@@ -28,6 +29,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
@@ -38,7 +42,15 @@ import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import uk.co.appoly.arcorelocation.LocationMarker;
 import uk.co.appoly.arcorelocation.LocationScene;
@@ -103,7 +115,26 @@ public class ARActivity extends AppCompatActivity {
                     andy.setRenderable(andyRenderable);
                     andy.select();
 
-                    System.out.println("Stupid Andy Created");
+                    System.out.println("andy created");
+
+                    // Get current location
+                    Location location = MainActivity.location;
+
+                    // Post a pin to firebase
+                    FirebaseFirestore db = MainActivity.db;
+
+                    if (location == null) {
+                        System.out.println("No current location found!");
+                        return;
+                    }
+
+                    String pin = location.getLatitude() + ":" + location.getLongitude();
+                    GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("location", geoPoint);
+                    // TODO: Add ssid and mac to pin
+                    db.collection("pins").document(pin).set(map);
                 });
     }
 
