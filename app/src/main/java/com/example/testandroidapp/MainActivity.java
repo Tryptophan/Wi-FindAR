@@ -320,7 +320,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         HeatmapTileProvider provider = new HeatmapTileProvider.Builder()
                 .weightedData(weightedHeatMap)
                 .gradient(gradient)
-                .radius(50)
                 .opacity(0.5)
                 .build();
 
