@@ -1,113 +1,104 @@
 package com.example.testandroidapp;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.design.internal.BottomNavigationItemView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.View;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.view.View;
 
-import java.sql.SQLSyntaxErrorException;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.android.gms.maps.model.LatLng;
 
-public class MainActivity extends AppCompatActivity {
 
-    private ArrayList<String> signals = new ArrayList<>();
-    private String filterString = "";
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback {
+
+    private SupportMapFragment mapFragment;
+
+    private FirebaseFirestore db;
+    private GoogleMap map;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        final TextView dataField = findViewById(R.id.datafield);
-        final EditText filter = findViewById(R.id.filter);
-        setSupportActionBar(toolbar);
 
-        Context context = getApplicationContext();
-        final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-
-        final BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent intent) {
-                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    List<ScanResult> scanResults = wifiManager.getScanResults();
-                    // add your logic here
-                    signals.clear();
-                    String dataString = "";
-                    for (ScanResult result : scanResults) {
-                        String signal = result.SSID + ", " + result.BSSID + ": " + result.level + "\n";
-                        signals.add(signal);
-                        if (signal.toLowerCase().contains(filterString.toLowerCase())) {
-                            dataString += signal;
-                        }
-                    }
-                    dataField.setText(dataString);
-                }
-            }
-        };
-
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                registerReceiver(wifiReceiver,
-                        new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-                wifiManager.startScan();
-            }
-        });
-
-        filter.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                System.out.println("String filter: " + s.toString());
-                filterString = s.toString();
-            }
-        });
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if (!CameraPermissionsHelper.hasCameraPermission(this)) {
+            //camera permissions are not there.
+            CameraPermissionsHelper.requestCameraPermission(this);
+            return;
         }
 
-        return super.onOptionsItemSelected(item);
+        // Init firebase app
+        FirebaseApp.initializeApp(this);
+        this.db = FirebaseFirestore.getInstance();
+
+        // Add map fragment
+        this.mapFragment = new SupportMapFragment();
+        this.mapFragment.getMapAsync(this);
+
+        // Render map fragment
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.container, this.mapFragment);
+        fragmentTransaction.commit();
+
+        // Navigation button listeners
+        BottomNavigationItemView mapButton = findViewById(R.id.navigation_map);
+        BottomNavigationItemView arButton = findViewById(R.id.navigation_ar);
+
+        mapButton.setOnClickListener(this);
+        arButton.setOnClickListener(this);
     }
+
+    @Override
+    public void onClick(View view) {
+        Fragment fragment = null;
+        switch (view.getId()) {
+            case R.id.navigation_map:
+                fragment = this.mapFragment;
+                break;
+            // TODO: AR fragment case
+        }
+
+        replaceFragment(fragment);
+    }
+
+    public void replaceFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    public void onMapReady(GoogleMap googleMap) {
+        this.map = googleMap;
+
+        // Get router locations from firebase and add pins to map
+        CollectionReference routers = db.collection("routers");
+        routers.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot snap) {
+                for (QueryDocumentSnapshot router : snap) {
+                    GeoPoint location = (GeoPoint) router.get("location");
+                    LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
+                    map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(marker, 15));
+                }
+            }
+        });
+    }
+
 }
