@@ -35,6 +35,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ARActivity"
+            android:label="@string/ar_activity"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
 
         <!-- Indicates that app requires ARCore ("AR Required"). Causes Google
          Play Store to download and install ARCore when the app is installed. -->

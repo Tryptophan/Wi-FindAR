@@ -1,15 +1,17 @@
 package com.example.testandroidapp;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -53,10 +55,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback, ARViewFrag.OnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback{
 
     private SupportMapFragment mapFragment;
-    private ARViewFrag arFragment;
 
     private TileOverlay overlay;
 
@@ -93,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.mapFragment.getMapAsync(this);
 
         // Add AR fragment
-        this.arFragment = new ARViewFrag();
+
 
         // Set location client
         this.fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -205,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
+        /*
         Fragment fragment = null;
         switch (view.getId()) {
             case R.id.navigation_map:
@@ -215,7 +217,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
 
-        replaceFragment(fragment);
+        replaceFragment(fragment);*/
+        Intent intent = new Intent(MainActivity.this, ARActivity.class);
+        startActivity(intent);
     }
 
     public void pollWiFi() {
@@ -258,11 +262,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // Mark location of router
                 GeoPoint location = (GeoPoint) router.get("location");
-
-                if (location == null) {
+                if(location == null) {
                     return;
                 }
-
                 LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
                 map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
             }
@@ -346,7 +348,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return this.scanResults;
     }
 
-    @Override
     public void onFragmentInteraction(Uri uri) {
 
     }

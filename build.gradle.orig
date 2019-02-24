@@ -1,0 +1,37 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+        //maven { url "http://code.newtronlabs.com:8081/artifactory/libs-release-local" }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.3.0'
+<<<<<<< HEAD
+        //classpath 'com.newtronlabs.android:plugin:2.0.5-alpha'
+        
+=======
+        classpath 'com.google.gms:google-services:4.2.0'
+
+>>>>>>> 7c266098b4cf1dd2a25ee1cf9cae90bbb02da884
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        //maven { url "http://code.newtronlabs.com:8081/artifactory/libs-release-local" }
+    }
+}
+
+//subprojects {
+//    apply plugin: 'com.newtronlabs.android'
+//}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
