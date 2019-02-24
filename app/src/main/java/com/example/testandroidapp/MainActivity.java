@@ -36,9 +36,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (!CameraPermissionsHelper.hasCameraPermission(this)) {
-            //camera permissions are not there.
-            CameraPermissionsHelper.requestCameraPermission(this);
+        // Request Camera and Location permissions from user
+        if (!PermissionsHelper.hasWhichPermission(this)) {
+            //location permissions are not there.
+            PermissionsHelper.requestAllPermissions(this);
             return;
         }
 
