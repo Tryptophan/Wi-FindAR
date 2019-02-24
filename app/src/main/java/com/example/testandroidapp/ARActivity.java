@@ -55,10 +55,6 @@ public class ARActivity extends AppCompatActivity {
     private ArFragment arFragment;
     private ModelRenderable andyRenderable;
 
-    //use from location scene
-    private LocationScene locationScene;
-    private ArSceneView arSceneView;
-
     private ViewRenderable arRenderableView;
 
     @Override
@@ -74,10 +70,6 @@ public class ARActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_ux);
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
-        if(arSceneView == null){
-            return;
-        }
-        locationScene = new LocationScene(this, this, arSceneView);
 
         // When you build a Renderable, Sceneform loads its resources in the background while returning
         // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
@@ -142,63 +134,5 @@ public class ARActivity extends AppCompatActivity {
             return false;
         }
         return true;
-    }
-
-    public void dropPin(GeoPoint coordinates){
-
-        LocationMarker layoutLocationMarker = new LocationMarker(
-                32.9872029,
-                -96.7503935,
-                getActiveView());
-
-        // An example "onRender" event, called every frame
-        // Updates the layout with the markers distance
-        layoutLocationMarker.setRenderEvent(new LocationNodeRender() {
-            @Override
-            public void render(LocationNode node) {
-                View eView = arRenderableView.getView();
-                TextView distanceTextView = eView.findViewById(R.id.textView2);
-                distanceTextView.setText(node.getDistance() + "M");
-            }
-        });
-        // Adding the marker
-        locationScene.mLocationMarkers.add(layoutLocationMarker);
-
-        // Adding a simple location marker of a 3D model
-        locationScene.mLocationMarkers.add(
-                new LocationMarker(
-                        32.9872029,
-                        -96.7503935,
-                        getAndy()));
-    }
-
-    private Node getActiveView() {
-        Node base = new Node();
-        base.setRenderable(arRenderableView);
-        Context c = this;
-        // Add  listeners etc here
-        View eView = arRenderableView.getView();
-        eView.setOnTouchListener((v, event) -> {
-            eView.performClick();
-            Toast.makeText(
-                    c, "Location marker touched.", Toast.LENGTH_LONG)
-                    .show();
-            return false;
-        });
-
-        return base;
-    }
-
-    private Node getAndy() {
-        Node base = new Node();
-        base.setRenderable(andyRenderable);
-        Context c = this;
-
-        base.setOnTapListener((v, event) -> {
-            Toast.makeText(
-                    c, "Andy touched.", Toast.LENGTH_LONG)
-                    .show();
-        });
-        return base;
     }
 }
