@@ -153,6 +153,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     int highestLevel = Integer.MIN_VALUE;
                     ScanResult bestRouter = null;
 
+                    if (scanResults.isEmpty()) {
+                        return;
+                    }
+
                     for (ScanResult router : scanResults) {
                         if (router.SSID.equals("CometNet")) {
 
