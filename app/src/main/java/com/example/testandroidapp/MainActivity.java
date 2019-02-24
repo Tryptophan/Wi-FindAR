@@ -1,5 +1,6 @@
 package com.example.testandroidapp;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.internal.BottomNavigationItemView;
 import android.support.v4.app.Fragment;
@@ -24,9 +25,10 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.android.gms.maps.model.LatLng;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback, ARViewFrag.OnFragmentInteractionListener {
 
     private SupportMapFragment mapFragment;
+    private ARViewFrag arFragment;
 
     private FirebaseFirestore db;
     private GoogleMap map;
@@ -50,6 +52,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.mapFragment = new SupportMapFragment();
         this.mapFragment.getMapAsync(this);
 
+        // Add AR fragment
+        this.arFragment = new ARViewFrag();
+
         // Render map fragment
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.container, this.mapFragment);
@@ -70,7 +75,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.navigation_map:
                 fragment = this.mapFragment;
                 break;
-            // TODO: AR fragment case
+            case R.id.navigation_ar:
+                fragment = this.arFragment;
+                break;
         }
 
         replaceFragment(fragment);
@@ -101,4 +108,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
+    }
 }
