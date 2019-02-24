@@ -74,9 +74,9 @@ public class ARActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_ux);
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
-
-        arSceneView = findViewById(R.id.ux_fragment);
-
+        if(arSceneView == null){
+            return;
+        }
         locationScene = new LocationScene(this, this, arSceneView);
 
         // When you build a Renderable, Sceneform loads its resources in the background while returning
@@ -96,29 +96,27 @@ public class ARActivity extends AppCompatActivity {
 
         arFragment.setOnTapArPlaneListener(
 
-                if(andyRenderable == null){
+
+            (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
+
+                GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+                dropPin(geoPoint);
+
+                /*if (andyRenderable == null) {
                     return;
                 }
 
-                GeoPoint = new GeoPoint()
-                dropPin();
-                /*
-                (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
-                    if (andyRenderable == null) {
-                        return;
-                    }
+                // Create the Anchor.
+                Anchor anchor = hitResult.createAnchor();
+                AnchorNode anchorNode = new AnchorNode(anchor);
+                anchorNode.setParent(arFragment.getArSceneView().getScene());
 
-                    // Create the Anchor.
-                    Anchor anchor = hitResult.createAnchor();
-                    AnchorNode anchorNode = new AnchorNode(anchor);
-                    anchorNode.setParent(arFragment.getArSceneView().getScene());
-
-                    // Create the transformable andy and add it to the anchor.
-                    TransformableNode andy = new TransformableNode(arFragment.getTransformationSystem());
-                    andy.setParent(anchorNode);
-                    andy.setRenderable(andyRenderable);
-                    andy.select();
-                });*/
+                // Create the transformable andy and add it to the anchor.
+                TransformableNode andy = new TransformableNode(arFragment.getTransformationSystem());
+                andy.setParent(anchorNode);
+                andy.setRenderable(andyRenderable);
+                andy.select();*/
+            });
     }
 
     /**
@@ -153,10 +151,9 @@ public class ARActivity extends AppCompatActivity {
     public void dropPin(GeoPoint coordinates){
 
         LocationMarker layoutLocationMarker = new LocationMarker(
-                coordinates.getLongitude(),
-                coordinates.getLatitude(),
-                getActiveView()
-        );
+                32.9872029,
+                -96.7503935,
+                getActiveView());
 
         // An example "onRender" event, called every frame
         // Updates the layout with the markers distance
@@ -174,8 +171,8 @@ public class ARActivity extends AppCompatActivity {
         // Adding a simple location marker of a 3D model
         locationScene.mLocationMarkers.add(
                 new LocationMarker(
-                        -0.119677,
-                        51.478494,
+                        32.9872029,
+                        -96.7503935,
                         getAndy()));
     }
 
@@ -186,6 +183,7 @@ public class ARActivity extends AppCompatActivity {
         // Add  listeners etc here
         View eView = arRenderableView.getView();
         eView.setOnTouchListener((v, event) -> {
+            eView.performClick();
             Toast.makeText(
                     c, "Location marker touched.", Toast.LENGTH_LONG)
                     .show();

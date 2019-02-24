@@ -1,17 +1,12 @@
 package com.example.testandroidapp;
 
 import android.Manifest;
-<<<<<<< HEAD
 import android.content.Intent;
-=======
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
->>>>>>> master
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Location;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -21,7 +16,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
 import android.view.View;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -64,10 +58,9 @@ import java.util.TimerTask;
 import javax.annotation.Nullable;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback, ARViewFrag.OnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback{
 
     private SupportMapFragment mapFragment;
-    private ARViewFrag arFragment;
 
     private FirebaseFirestore db;
     private GoogleMap map;
@@ -98,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.mapFragment.getMapAsync(this);
 
         // Add AR fragment
-        this.arFragment = new ARViewFrag();
+
 
         // Set location client
         this.fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -287,7 +280,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return this.scanResults;
     }
 
-    @Override
     public void onFragmentInteraction(Uri uri) {
 
     }
