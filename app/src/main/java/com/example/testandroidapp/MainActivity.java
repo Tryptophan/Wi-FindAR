@@ -40,7 +40,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (!PermissionsHelper.hasWhichPermission(this)) {
             //location permissions are not there.
             PermissionsHelper.requestAllPermissions(this);
-            return;
         }
 
         // Init firebase app
