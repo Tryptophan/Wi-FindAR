@@ -19,7 +19,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
 import android.view.View;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -28,28 +27,21 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,13 +51,13 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.annotation.Nullable;
-
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback, ARViewFrag.OnFragmentInteractionListener {
 
     private SupportMapFragment mapFragment;
     private ARViewFrag arFragment;
+
+    private TileOverlay overlay;
 
     private FirebaseFirestore db;
     private GoogleMap map;
@@ -160,6 +152,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             map.put("mac", router.BSSID);
                             db.collection("routers").document(router.BSSID).set(map);
 
+                            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                                return;
+                            }
                             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
                             // Push heat to firebase
@@ -177,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         if (location != null) {
-            String key = router.BSSID + ":" + location.getLatitude() + ":" + location.getLongitude();
+            String key = router.SSID + ":" + location.getLatitude() + ":" + location.getLongitude();
             GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
             Map<String, Object> map = new HashMap<>();
             map.put("location", geoPoint);
@@ -301,6 +296,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         System.out.println("list: " + weightedHeatMap);
 
+        if (weightedHeatMap.isEmpty()) {
+            return;
+        }
+
         // Create the gradient
         int[] colors = {
                 Color.rgb(255, 0, 0),
@@ -313,6 +312,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Gradient gradient = new Gradient(colors, startPoints);
 
+        if (overlay != null) {
+            overlay.clearTileCache();
+        }
+
         // Create the tile provider
         HeatmapTileProvider provider = new HeatmapTileProvider.Builder()
                 .weightedData(weightedHeatMap)
@@ -322,7 +325,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .build();
 
         // Add the tile overlay to the map
-        TileOverlay overlay = map.addTileOverlay(new TileOverlayOptions().tileProvider(provider));
+        overlay = map.addTileOverlay(new TileOverlayOptions().tileProvider(provider));
     }
 
     public List<ScanResult> getList() {
