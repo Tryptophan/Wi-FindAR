@@ -50,6 +50,17 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
+
+    // Some de OpenGL library
+    //implementation "de.javagl.obj:0.3.0"
+    //implementation 'de.javagl:obj:0.2.1'
+    //implementation 'de.javagl:obj:0.2.1'
 }
 
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.ar.sceneform.plugin'
+
+sceneform.asset('sampledata/models/andy.obj',
+        'default',
+        'sampledata/models/andy.sfa',
+        'src/main/res/raw/andy')

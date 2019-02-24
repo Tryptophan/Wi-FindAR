@@ -5,4 +5,16 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="ar_activity">ar_activity</string>
+
+    <!-- Strings used in Snackbar messages -->
+    <string name="snackbar_arcore_unavailable">Please install ARCore.</string>
+    <string name="snackbar_arcore_too_old">Please update ARCore.</string>
+    <string name="snackbar_arcore_sdk_too_old">Please update the app with a newer version of the ARCore SDK.</string>
+    <string name="snackbar_arcore_exception">This device does not support ARCore.</string>
+    <string name="snackbar_camera_unavailable">Camera unavailable. Please restart the app.</string>
+    <string name="snackbar_dismiss">Dismiss</string>
+
+    <!-- Strings used by UI components -->
+    <string name="clear_button_string">Clear</string>
+    <string name="hello_ar_activity">hello_ar_activity</string>
 </resources>

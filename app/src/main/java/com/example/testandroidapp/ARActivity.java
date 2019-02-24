@@ -89,6 +89,8 @@ public class ARActivity extends AppCompatActivity {
                     andy.setParent(anchorNode);
                     andy.setRenderable(andyRenderable);
                     andy.select();
+
+                    System.out.println("Stupid Andy Created");
                 });
     }
 
