@@ -1,12 +1,20 @@
 package com.example.testandroidapp;
 
 import android.Manifest;
+<<<<<<< HEAD
 import android.content.Intent;
+=======
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+>>>>>>> master
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.internal.BottomNavigationItemView;
 import android.support.v4.app.ActivityCompat;
@@ -30,11 +38,14 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
@@ -43,7 +54,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.annotation.Nullable;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnMapReadyCallback, ARViewFrag.OnFragmentInteractionListener {
@@ -56,7 +74,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private FusedLocationProviderClient fusedLocationClient;
 
+    private WifiManager wifiManager;
     private List<ScanResult> scanResults;
+    private BroadcastReceiver wifiReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +114,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mapButton.setOnClickListener(this);
         arButton.setOnClickListener(this);
+
+        // Set polling timer
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        pollWiFi();
+
+        // Set callback for received wifi signals
+        wifiReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+                    scanResults = wifiManager.getScanResults();
+                    System.out.println("wifi: " + scanResults);
+                    for (ScanResult router : scanResults) {
+                        if (router.SSID.equals("CometNet")) {
+                            Map<String, String> map = new HashMap<>();
+                            map.put("ssid", router.SSID);
+                            map.put("mac", router.BSSID);
+                            db.collection("routers").document(router.BSSID).set(map);
+
+                            // Push heat to firebase
+                            addHeatAtCurrentLocation(router);
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    private void addHeatAtCurrentLocation(ScanResult router) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        this.fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, location -> {
+                    if (location != null) {
+                        String key = router.BSSID + ":" + location.getLatitude() + ":" + location.getLongitude();
+                        GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("location", geoPoint);
+                        map.put("weight", WifiManager.calculateSignalLevel(router.level, 5));
+                        map.put("mac", router.BSSID);
+                        map.put("ssid", router.SSID);
+                        db.collection("locations").document(key).set(map);
+
+                        // Set heatmap with location refs
+                        Map<String, Object> heatmap = new HashMap<>();
+                        DocumentReference ref = DocumentReference.forPath(ResourcePath.fromString("/locations/" + key), db);
+                        heatmap.put("locations", Arrays.asList(ref));
+                        db.collection("heatmaps").document(router.BSSID).set(heatmap);
+                    }
+                });
     }
 
     @Override
@@ -114,6 +185,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivity(intent);
     }
 
+    public void pollWiFi() {
+        Timer timer = new java.util.Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("Poll wifi");
+                registerReceiver(wifiReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+                wifiManager.startScan();
+            }
+        }, 5000, 5000);
+    }
+
     public void replaceFragment(Fragment fragment) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.container, fragment);
@@ -123,6 +206,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void onMapReady(GoogleMap googleMap) {
         this.map = googleMap;
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        this.fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, location -> {
+                    if (location != null) {
+                        LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(marker, 15));
+                    }
+                });
 
         // Get router locations from firebase and add pins to map
         CollectionReference routers = db.collection("routers");
@@ -136,50 +230,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
                 map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
-
-                // Draw heatmap for router
-                drawHeatMap(router);
             }
         });
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        this.fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, location -> {
-                    if (location != null) {
-                        LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(marker, 15));
-                    }
-                });
-    }
-
-    public void drawHeatMap(QueryDocumentSnapshot router) {
-
-        // ArrayList to store heat map points
-        ArrayList<WeightedLatLng> weightedHeatMap = new ArrayList<>();
-
         // Get reference to heapmap of router
-        DocumentReference heatmap = (DocumentReference) router.get("heatmap");
-        heatmap.get().addOnSuccessListener(snap -> {
-            List<DocumentReference> locations = (List<DocumentReference>) snap.get("locations");
-            for (int i = 0; i < locations.size(); i++) {
-                final int index = i;
-                locations.get(i).get().addOnSuccessListener(location -> {
+        CollectionReference locations = db.collection("locations");
+        locations.addSnapshotListener((snap, e) -> {
 
-                    // Get geopoint from location
-                    GeoPoint geoPoint = (GeoPoint) location.get("location");
-                    LatLng latLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+            // ArrayList to store heat map points
+            ArrayList<WeightedLatLng> weightedHeatMap = new ArrayList<>();
 
-                    // Add to arraylist
-                    WeightedLatLng weightedLatLng = new WeightedLatLng(latLng, ((Long) location.get("weight")).doubleValue());
-                    weightedHeatMap.add(weightedLatLng);
+            System.out.println("Location: " + snap.getDocuments());
+            for (DocumentSnapshot location : snap.getDocuments()) {
 
-                    if (index == locations.size() - 1) {
-                        overlayHeatmap(weightedHeatMap);
-                    }
-                });
+                // Get geopoint from location
+                GeoPoint geoPoint = (GeoPoint) location.get("location");
+                LatLng latLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+
+                // Add to arraylist
+                WeightedLatLng weightedLatLng = new WeightedLatLng(latLng, ((Long) location.get("weight")).doubleValue());
+                weightedHeatMap.add(weightedLatLng);
             }
+            overlayHeatmap(weightedHeatMap);
         });
     }
 
@@ -187,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         System.out.println("list: " + weightedHeatMap);
 
-        // Create the gradient.
+        // Create the gradient
         int[] colors = {
                 Color.rgb(255, 0, 0),
                 Color.rgb(102, 225, 0)
@@ -199,14 +271,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Gradient gradient = new Gradient(colors, startPoints);
 
-        // Create the tile provider.
+        // Create the tile provider
         HeatmapTileProvider provider = new HeatmapTileProvider.Builder()
                 .weightedData(weightedHeatMap)
                 .gradient(gradient)
                 .radius(50)
+                .opacity(0.5)
                 .build();
 
-        // Add the tile overlay to the map.
+        // Add the tile overlay to the map
         TileOverlay overlay = map.addTileOverlay(new TileOverlayOptions().tileProvider(provider));
     }
 
