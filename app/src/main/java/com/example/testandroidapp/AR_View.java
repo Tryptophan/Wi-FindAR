@@ -1,12 +1,16 @@
 package com.example.testandroidapp;
 
+import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import com.google.ar.core.ArCoreApk;
 
-public class AR_View extends AppCompatActivity {
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+public class AR_View extends AppCompatActivity implements GLSurfaceView.Renderer {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,5 +48,20 @@ public class AR_View extends AppCompatActivity {
             return;
         }
         return;
+    }
+
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+
+    }
+
+    @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+
+    }
+
+    @Override
+    public void onDrawFrame(GL10 gl) {
+
     }
 }
