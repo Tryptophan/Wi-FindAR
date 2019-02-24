@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -74,6 +76,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private List<ScanResult> scanResults;
     private BroadcastReceiver wifiReceiver;
 
+    private LocationListener locationListener;
+    private LocationManager locationManager;
+    private Location location;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,6 +121,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         pollWiFi();
 
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location loc) {
+                location = loc;
+                System.out.println("curr loc: " + location);
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+
+        locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+
         // Set callback for received wifi signals
         wifiReceiver = new BroadcastReceiver() {
             @Override
@@ -129,6 +160,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             map.put("mac", router.BSSID);
                             db.collection("routers").document(router.BSSID).set(map);
 
+                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+
                             // Push heat to firebase
                             addHeatAtCurrentLocation(router);
                         }
@@ -142,25 +175,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        this.fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, location -> {
-                    if (location != null) {
-                        String key = router.BSSID + ":" + location.getLatitude() + ":" + location.getLongitude();
-                        GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("location", geoPoint);
-                        map.put("weight", WifiManager.calculateSignalLevel(router.level, 5));
-                        map.put("mac", router.BSSID);
-                        map.put("ssid", router.SSID);
-                        db.collection("locations").document(key).set(map);
 
-                        // Set heatmap with location refs
-                        Map<String, Object> heatmap = new HashMap<>();
-                        DocumentReference ref = DocumentReference.forPath(ResourcePath.fromString("/locations/" + key), db);
-                        heatmap.put("locations", Arrays.asList(ref));
-                        db.collection("heatmaps").document(router.BSSID).set(heatmap);
-                    }
-                });
+        if (location != null) {
+            String key = router.BSSID + ":" + location.getLatitude() + ":" + location.getLongitude();
+            GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+            Map<String, Object> map = new HashMap<>();
+            map.put("location", geoPoint);
+            map.put("weight", WifiManager.calculateSignalLevel(router.level, 5));
+            map.put("mac", router.BSSID);
+            map.put("ssid", router.SSID);
+            db.collection("locations").document(key).set(map);
+
+            // Set heatmap with location refs
+            Map<String, Object> heatmap = new HashMap<>();
+            DocumentReference ref = DocumentReference.forPath(ResourcePath.fromString("/locations/" + key), db);
+            heatmap.put("locations", Arrays.asList(ref));
+            db.collection("heatmaps").document(router.BSSID).set(heatmap);
+        }
     }
 
     @Override
@@ -230,6 +261,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Get reference to heapmap of router
         CollectionReference locations = db.collection("locations");
+        locations.get().addOnSuccessListener(snap -> {
+            // ArrayList to store heat map points
+            ArrayList<WeightedLatLng> weightedHeatMap = new ArrayList<>();
+
+            System.out.println("Location: " + snap.getDocuments());
+            for (DocumentSnapshot location : snap.getDocuments()) {
+
+                // Get geopoint from location
+                GeoPoint geoPoint = (GeoPoint) location.get("location");
+                LatLng latLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+
+                // Add to arraylist
+                WeightedLatLng weightedLatLng = new WeightedLatLng(latLng, ((Long) location.get("weight")).doubleValue());
+                weightedHeatMap.add(weightedLatLng);
+            }
+        });
         locations.addSnapshotListener((snap, e) -> {
 
             // ArrayList to store heat map points
