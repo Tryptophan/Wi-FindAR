@@ -30,6 +30,7 @@ dependencies {
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.google.firebase:firebase-core:16.0.7'
     implementation 'com.google.firebase:firebase-firestore:18.0.1'
+    implementation 'com.android.support:support-v4:28.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
@@ -38,6 +39,9 @@ dependencies {
     implementation 'com.google.ar:core:1.7.0'
     // Provides ArFragment, and other UX resources.
     implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.7.0'
+
+    //keep to most recent version on the ARCore-Location git
+    compile 'com.github.appoly:ARCore-Location:1.1.2'
 }
 
 apply plugin: 'com.google.gms.google-services'
