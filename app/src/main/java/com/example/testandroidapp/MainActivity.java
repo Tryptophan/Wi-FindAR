@@ -184,7 +184,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         if (location != null) {
-            String key = router.SSID + ":" + location.getLatitude() + ":" + location.getLongitude();
+            DecimalFormat df = new DecimalFormat("#.000000");
+            Double lat = Double.parseDouble(df.format(location.getLatitude()));
+            Double lng = Double.parseDouble(df.format(location.getLongitude()));
+            String key = router.SSID + ":" + lat + ":" + lng;
             GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
             Map<String, Object> map = new HashMap<>();
             map.put("location", geoPoint);
@@ -332,6 +335,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .weightedData(weightedHeatMap)
                 .gradient(gradient)
                 .opacity(0.5)
+                .radius(35)
                 .build();
 
         // Add the tile overlay to the map
