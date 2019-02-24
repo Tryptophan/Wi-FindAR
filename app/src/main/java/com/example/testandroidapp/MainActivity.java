@@ -70,7 +70,9 @@ public class MainActivity extends AppCompatActivity {
                     signals.clear();
                     String dataString = "";
                     for (ScanResult result : scanResults) {
-                        String signal = result.SSID + ", " + result.BSSID + ": " + result.level + "\n";
+                        // SSID = AP SSID, BSSID = MAC Address, level = signal strength
+                        String signal = result.SSID + ", " + result.BSSID + ": " + result.level + result.capabilities + wifiManager.calculateSignalLevel(result.level, 5)  + "\n";
+                        RouterInfo routerInfo = new RouterInfo(result.SSID, result.BSSID, result.capabilities, result.level, WifiManager.calculateSignalLevel(result.level, 5));
                         signals.add(signal);
                         if (signal.toLowerCase().contains(filterString.toLowerCase())) {
                             dataString += signal;
