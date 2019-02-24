@@ -43,6 +43,7 @@ import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -145,22 +146,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                     scanResults = wifiManager.getScanResults();
                     System.out.println("wifi: " + scanResults);
+
+                    // TODO: implement for many SSID's
+
+                    int highestLevel = Integer.MIN_VALUE;
+                    ScanResult bestRouter = null;
+
                     for (ScanResult router : scanResults) {
                         if (router.SSID.equals("CometNet")) {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("ssid", router.SSID);
-                            map.put("mac", router.BSSID);
-                            db.collection("routers").document(router.BSSID).set(map);
 
-                            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                                return;
+                            if (router.level > highestLevel) {
+                                highestLevel = router.level;
+                                bestRouter = router;
+                                Map<String, String> map = new HashMap<>();
+                                map.put("ssid", router.SSID);
+                                map.put("mac", router.BSSID);
+                                db.collection("routers").document(router.BSSID).set(map);
                             }
-                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
-                            // Push heat to firebase
-                            addHeatAtCurrentLocation(router);
                         }
                     }
+
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        return;
+                    }
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+
+                    // Push heat to firebase
+                    addHeatAtCurrentLocation(bestRouter);
                 }
             }
         };
@@ -177,15 +189,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Map<String, Object> map = new HashMap<>();
             map.put("location", geoPoint);
             map.put("weight", WifiManager.calculateSignalLevel(router.level, 5));
-            map.put("mac", router.BSSID);
             map.put("ssid", router.SSID);
             db.collection("locations").document(key).set(map);
 
-            // Set heatmap with location refs
-            Map<String, Object> heatmap = new HashMap<>();
-            DocumentReference ref = DocumentReference.forPath(ResourcePath.fromString("/locations/" + key), db);
-            heatmap.put("locations", Arrays.asList(ref));
-            db.collection("heatmaps").document(router.BSSID).set(heatmap);
+//            // Set heatmap with location refs
+//            Map<String, Object> heatmap = new HashMap<>();
+//            DocumentReference ref = DocumentReference.forPath(ResourcePath.fromString("/locations/" + key), db);
+//            heatmap.put("locations", Arrays.asList(ref));
+//            db.collection("heatmaps").document(router.BSSID).set(heatmap);
         }
     }
 
