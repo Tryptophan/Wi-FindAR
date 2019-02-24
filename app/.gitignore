@@ -1,4 +1,4 @@
 /build
 .idea/
-app/google/services.json
+google-services.json
 
