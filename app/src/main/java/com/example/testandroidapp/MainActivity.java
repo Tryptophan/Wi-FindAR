@@ -37,6 +37,12 @@ public class MainActivity extends AppCompatActivity {
         final EditText filter = findViewById(R.id.filter);
         setSupportActionBar(toolbar);
 
+        if (!CameraPermissionsHelper.hasCameraPermission(this)) {
+            //camera permissions are not there.
+            CameraPermissionsHelper.requestCameraPermission(this);
+            return;
+        }
+
         Context context = getApplicationContext();
         final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
@@ -107,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
+
 }
