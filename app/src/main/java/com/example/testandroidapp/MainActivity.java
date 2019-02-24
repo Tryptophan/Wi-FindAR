@@ -127,6 +127,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // Mark location of router
                 GeoPoint location = (GeoPoint)router.get("location");
 
+                if (location == null) {
+                    return;
+                }
+
                 LatLng marker = new LatLng(location.getLatitude(), location.getLongitude());
                 map.addMarker(new MarkerOptions().position(marker).title((String) router.get("ssid")));
 
